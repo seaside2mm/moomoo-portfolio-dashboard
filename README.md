@@ -433,6 +433,114 @@ app/static/dashboard.js
 
 前端数据全部来自 `/api/dashboard`，不会写死持仓数据。
 
+## v1.1.0 前端在线部署
+
+v1.1.0 支持把前端静态页面部署到 GitHub Pages。
+
+重要边界：
+
+```text
+在线前端只负责展示
+OpenD 仍然在本地运行
+云端前端不会直连 127.0.0.1:11111
+```
+
+部署后，前端需要访问一个云端只读 API：
+
+```text
+GET /api/snapshots
+GET /api/dashboard
+```
+
+如果暂时还没有云端只读 API，GitHub Pages 页面可以打开，但无法加载真实快照数据。
+
+### 本地构建静态前端
+
+构建命令：
+
+```powershell
+C:\Python313\python.exe scripts\build_frontend.py `
+  --api-base-url "https://your-api.example.com" `
+  --read-only true
+```
+
+输出目录：
+
+```text
+dist/frontend
+```
+
+构建产物会包含：
+
+```text
+index.html
+styles.css
+dashboard.js
+config.js
+.nojekyll
+```
+
+`config.js` 中会写入在线 API 地址：
+
+```javascript
+window.PORTFOLIO_DASHBOARD_CONFIG = {
+  apiBaseUrl: "https://your-api.example.com",
+  readOnly: true
+};
+```
+
+`readOnly = true` 时，前端会隐藏“同步”和“主题”按钮，避免在线页面误触本地同步能力。
+
+### GitHub Pages 自动部署
+
+仓库已包含 workflow：
+
+```text
+.github/workflows/deploy-frontend.yml
+```
+
+GitHub 仓库设置：
+
+```text
+Settings -> Pages -> Build and deployment -> Source -> GitHub Actions
+```
+
+仓库变量：
+
+```text
+Settings -> Secrets and variables -> Actions -> Variables
+```
+
+建议添加：
+
+```text
+FRONTEND_API_BASE_URL = https://your-api.example.com
+FRONTEND_READ_ONLY = true
+```
+
+触发方式：
+
+```text
+推送 main 分支时自动部署
+或在 Actions 页面手动运行 Deploy frontend
+```
+
+部署完成后，GitHub Actions 会给出 Pages URL。
+
+### 与本地同步的关系
+
+推荐架构：
+
+```text
+本地电脑：
+OpenD -> 本地同步程序 -> SQLite -> 上传快照到云端只读 API
+
+云端：
+GitHub Pages 前端 -> 云端只读 API -> 展示快照
+```
+
+不要把 OpenD 的 `11111` 端口暴露到公网。
+
 ## 每日自动同步
 
 应用启动时会尝试启用每日同步调度。

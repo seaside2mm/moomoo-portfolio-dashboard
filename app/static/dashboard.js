@@ -26,6 +26,14 @@ const themeColor = document.querySelector("#themeColor");
 const themeTable = document.querySelector("#themeTable");
 let activeDashboardData = null;
 
+const runtimeConfig = window.PORTFOLIO_DASHBOARD_CONFIG || {};
+const apiBaseUrl = String(runtimeConfig.apiBaseUrl || "").replace(/\/$/, "");
+const isReadOnlyFrontend = Boolean(runtimeConfig.readOnly);
+
+function apiUrl(path) {
+  return `${apiBaseUrl}${path}`;
+}
+
 const sectorStyles = {
   "太空": { color: "#ff2c93", icon: "⌁" },
   "AI基建": { color: "#19c7e5", icon: "◎" },
@@ -54,7 +62,7 @@ function getSectorStyle(theme, index = 0) {
 }
 
 async function fetchJson(url, options = {}) {
-  const response = await fetch(url, options);
+  const response = await fetch(apiUrl(url), options);
   if (!response.ok) {
     const text = await response.text();
     try {
@@ -659,3 +667,8 @@ saveThemeButton.addEventListener("click", async () => {
 });
 
 loadSnapshots().catch(() => showStatus("暂无快照，请先同步 moomoo 账户数据", true));
+
+if (isReadOnlyFrontend) {
+  syncButton.hidden = true;
+  themeModalButton.hidden = true;
+}
