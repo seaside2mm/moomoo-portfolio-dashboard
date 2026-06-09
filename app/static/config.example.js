@@ -1,4 +1,5 @@
 window.PORTFOLIO_DASHBOARD_CONFIG = {
   apiBaseUrl: "",
-  readOnly: false
+  readOnly: false,
+  requiresWriteToken: false
 };

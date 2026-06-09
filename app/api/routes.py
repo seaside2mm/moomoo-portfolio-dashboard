@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from app.models.snapshots import SymbolCategoryOverride, ThemeMapping
@@ -33,8 +33,13 @@ def create_router(
     repository: SQLiteSnapshotRepository | None = None,
     dashboard_service: DashboardService | None = None,
     sync_service: SyncService | None = None,
+    write_token: str | None = None,
 ) -> APIRouter:
     router = APIRouter(prefix="/api")
+
+    def require_write_access(x_dashboard_token: str | None) -> None:
+        if write_token and x_dashboard_token != write_token:
+            raise HTTPException(status_code=401, detail="invalid dashboard token")
 
     @router.get("/health")
     def health() -> dict[str, str]:
@@ -62,7 +67,8 @@ def create_router(
         return data
 
     @router.post("/sync/run")
-    def run_sync() -> dict[str, Any]:
+    def run_sync(x_dashboard_token: str | None = Header(default=None)) -> dict[str, Any]:
+        require_write_access(x_dashboard_token)
         if sync_service is None:
             raise HTTPException(status_code=500, detail="sync service unavailable")
         if sync_service.is_running():
@@ -78,7 +84,11 @@ def create_router(
         return repository.list_theme_mappings() if repository else []
 
     @router.post("/themes")
-    def upsert_theme(payload: ThemeMappingRequest) -> dict[str, Any]:
+    def upsert_theme(
+        payload: ThemeMappingRequest,
+        x_dashboard_token: str | None = Header(default=None),
+    ) -> dict[str, Any]:
+        require_write_access(x_dashboard_token)
         if repository is None:
             raise HTTPException(status_code=500, detail="repository unavailable")
         mapping = ThemeMapping(
@@ -100,7 +110,11 @@ def create_router(
         return repository.list_symbol_category_overrides() if repository else []
 
     @router.post("/category-overrides")
-    def upsert_category_override(payload: SymbolCategoryOverrideRequest) -> dict[str, Any]:
+    def upsert_category_override(
+        payload: SymbolCategoryOverrideRequest,
+        x_dashboard_token: str | None = Header(default=None),
+    ) -> dict[str, Any]:
+        require_write_access(x_dashboard_token)
         if repository is None:
             raise HTTPException(status_code=500, detail="repository unavailable")
         try:

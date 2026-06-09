@@ -109,3 +109,41 @@ def test_sync_endpoint_fails_gracefully_without_opend():
     client = TestClient(create_app(database_path=make_db_path()))
     response = client.post("/api/sync/run")
     assert response.status_code == 502
+
+
+def test_write_endpoints_require_dashboard_token_when_configured(monkeypatch):
+    monkeypatch.setenv("PORTFOLIO_DASHBOARD_API_TOKEN", "secret-token")
+    client = TestClient(create_app(database_path=make_db_path()))
+    payload = {
+        "symbol": "NVDA",
+        "theme": "芯片",
+        "display_name": "NVIDIA",
+        "color": "#22d3ee",
+        "enabled": True,
+    }
+
+    assert client.post("/api/themes", json=payload).status_code == 401
+    assert client.post("/api/themes", json=payload, headers={"X-Dashboard-Token": "wrong"}).status_code == 401
+
+    response = client.post("/api/themes", json=payload, headers={"X-Dashboard-Token": "secret-token"})
+
+    assert response.status_code == 200
+    assert response.json()["symbol"] == "NVDA"
+    monkeypatch.delenv("PORTFOLIO_DASHBOARD_API_TOKEN")
+
+
+def test_cors_allows_configured_online_frontend_origin(monkeypatch):
+    monkeypatch.setenv("PORTFOLIO_CORS_ALLOW_ORIGINS", "https://seaside2mm.github.io")
+    client = TestClient(create_app(database_path=make_db_path()))
+
+    response = client.options(
+        "/api/snapshots",
+        headers={
+            "Origin": "https://seaside2mm.github.io",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "https://seaside2mm.github.io"
+    monkeypatch.delenv("PORTFOLIO_CORS_ALLOW_ORIGINS")

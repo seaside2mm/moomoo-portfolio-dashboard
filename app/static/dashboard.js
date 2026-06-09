@@ -29,9 +29,40 @@ let activeDashboardData = null;
 const runtimeConfig = window.PORTFOLIO_DASHBOARD_CONFIG || {};
 const apiBaseUrl = String(runtimeConfig.apiBaseUrl || "").replace(/\/$/, "");
 const isReadOnlyFrontend = Boolean(runtimeConfig.readOnly);
+const requiresWriteToken = Boolean(runtimeConfig.requiresWriteToken);
+const writeTokenStorageKey = runtimeConfig.writeTokenStorageKey || "portfolioDashboardWriteToken";
 
 function apiUrl(path) {
   return `${apiBaseUrl}${path}`;
+}
+
+function getWriteToken() {
+  if (!requiresWriteToken) {
+    return null;
+  }
+  const savedToken = window.sessionStorage.getItem(writeTokenStorageKey);
+  if (savedToken) {
+    return savedToken;
+  }
+  const token = window.prompt("请输入看板操作令牌");
+  if (token) {
+    window.sessionStorage.setItem(writeTokenStorageKey, token);
+  }
+  return token;
+}
+
+function withWriteHeaders(options = {}) {
+  const token = getWriteToken();
+  const headers = {
+    ...(options.headers || {})
+  };
+  if (token) {
+    headers["X-Dashboard-Token"] = token;
+  }
+  return {
+    ...options,
+    headers
+  };
 }
 
 const sectorStyles = {
@@ -618,7 +649,7 @@ syncButton.addEventListener("click", async () => {
   syncButton.disabled = true;
   showStatus("正在同步账户数据", true);
   try {
-    const result = await fetchJson("/api/sync/run", { method: "POST" });
+    const result = await fetchJson("/api/sync/run", withWriteHeaders({ method: "POST" }));
     await loadSnapshots();
     snapshotSelect.value = String(result.batch_id);
     await loadDashboard(result.batch_id);
@@ -656,8 +687,10 @@ saveThemeButton.addEventListener("click", async () => {
     return;
   }
   await fetchJson("/api/themes", {
+    ...withWriteHeaders({
+      headers: { "Content-Type": "application/json" }
+    }),
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
   });
   await loadThemes();

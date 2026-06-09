@@ -27,7 +27,12 @@ def rewrite_index_for_static_host(index_html: str) -> str:
     )
 
 
-def build_frontend(output_dir: Path, api_base_url: str, read_only: bool) -> None:
+def build_frontend(
+    output_dir: Path,
+    api_base_url: str,
+    read_only: bool,
+    requires_write_token: bool = True,
+) -> None:
     if output_dir.exists():
         shutil.rmtree(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -41,6 +46,7 @@ def build_frontend(output_dir: Path, api_base_url: str, read_only: bool) -> None
     config = {
         "apiBaseUrl": api_base_url.rstrip("/"),
         "readOnly": read_only,
+        "requiresWriteToken": requires_write_token,
     }
     config_js = f"window.PORTFOLIO_DASHBOARD_CONFIG = {json.dumps(config, ensure_ascii=False, indent=2)};\n"
     (output_dir / "config.js").write_text(config_js, encoding="utf-8")
@@ -54,12 +60,14 @@ def main() -> None:
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--api-base-url", default="")
     parser.add_argument("--read-only", default="true")
+    parser.add_argument("--requires-write-token", default="true")
     args = parser.parse_args()
 
     build_frontend(
         output_dir=args.output_dir,
         api_base_url=args.api_base_url,
         read_only=parse_bool(args.read_only),
+        requires_write_token=parse_bool(args.requires_write_token),
     )
 
 

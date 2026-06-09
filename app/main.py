@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -26,7 +27,21 @@ def create_app(database_path: Path | None = None, enable_scheduler: bool = False
     )
 
     app = FastAPI(title="Portfolio Dashboard")
-    app.include_router(create_router(repository, dashboard_service, sync_service))
+    if settings.cors_allow_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=list(settings.cors_allow_origins),
+            allow_methods=["GET", "POST", "OPTIONS"],
+            allow_headers=["*"],
+        )
+    app.include_router(
+        create_router(
+            repository,
+            dashboard_service,
+            sync_service,
+            write_token=settings.dashboard_api_token,
+        )
+    )
     app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
     @app.get("/")

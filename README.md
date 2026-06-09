@@ -541,6 +541,113 @@ GitHub Pages 前端 -> 云端只读 API -> 展示快照
 
 不要把 OpenD 的 `11111` 端口暴露到公网。
 
+## v1.2.0 在线前端同步操作
+
+v1.2.0 支持在线前端显示“同步”和“主题”等操作按钮，并把操作请求发给一个可访问 OpenD 的后端 API。
+
+关键限制：
+
+```text
+GitHub Pages 前端不能直接同步 OpenD
+执行同步的仍然必须是能访问 OpenD 的后端
+```
+
+可行架构：
+
+```text
+GitHub Pages 前端
+  -> HTTPS API 地址
+  -> 本地 FastAPI 服务
+  -> 本机 OpenD 127.0.0.1:11111
+```
+
+这个 HTTPS API 地址可以来自：
+
+```text
+Cloudflare Tunnel
+Tailscale Funnel
+自建内网穿透
+部署在同一台 OpenD 机器上的公网反代
+```
+
+不要直接暴露 OpenD 的 `11111` 端口；只暴露本项目的 FastAPI，并且要设置操作令牌。
+
+### 后端环境变量
+
+在线前端跨域访问本地/隧道后端时，需要设置 CORS：
+
+```powershell
+$env:PORTFOLIO_CORS_ALLOW_ORIGINS = "https://seaside2mm.github.io"
+```
+
+如果你的 Pages 地址包含仓库路径，例如：
+
+```text
+https://seaside2mm.github.io/moomoo-portfolio-dashboard/
+```
+
+Origin 仍然是：
+
+```text
+https://seaside2mm.github.io
+```
+
+建议为写操作设置令牌：
+
+```powershell
+$env:PORTFOLIO_DASHBOARD_API_TOKEN = "换成一段足够长的随机字符串"
+```
+
+启动后端：
+
+```powershell
+C:\Python313\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+如果用隧道工具，需要把外部 HTTPS 地址转发到：
+
+```text
+http://127.0.0.1:8000
+```
+
+### GitHub Pages 变量
+
+如果希望在线前端可以点击“同步”，GitHub 仓库变量建议设置为：
+
+```text
+FRONTEND_API_BASE_URL = https://your-tunnel-or-api.example.com
+FRONTEND_READ_ONLY = false
+FRONTEND_REQUIRES_WRITE_TOKEN = true
+```
+
+含义：
+
+```text
+FRONTEND_API_BASE_URL：前端请求的后端 API 地址
+FRONTEND_READ_ONLY=false：显示同步、主题等操作按钮
+FRONTEND_REQUIRES_WRITE_TOKEN=true：写操作前提示输入令牌
+```
+
+第一次点击“同步”或“保存主题”时，页面会提示输入操作令牌。令牌只保存在当前浏览器会话的 `sessionStorage`，不会写入 GitHub 仓库。
+
+### 安全建议
+
+```text
+只暴露 FastAPI，不暴露 OpenD 11111
+必须使用 HTTPS 隧道或反代
+必须设置 PORTFOLIO_DASHBOARD_API_TOKEN
+GitHub Pages 不要写死令牌
+不需要在项目里保存 moomooID 或交易密码
+```
+
+如果后端返回：
+
+```text
+401 invalid dashboard token
+```
+
+说明操作令牌错误，关闭页面重新打开，或清除浏览器 `sessionStorage` 后重新输入。
+
 ## 每日自动同步
 
 应用启动时会尝试启用每日同步调度。

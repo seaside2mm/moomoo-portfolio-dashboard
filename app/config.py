@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import os
 from pathlib import Path
 
 
@@ -15,7 +16,17 @@ class Settings:
     moomoo_host: str = "127.0.0.1"
     moomoo_port: int = 11111
     moomoo_password: str | None = None
+    dashboard_api_token: str | None = None
+    cors_allow_origins: tuple[str, ...] = ()
 
 
 def get_settings() -> Settings:
-    return Settings()
+    cors_allow_origins = tuple(
+        item.strip()
+        for item in os.environ.get("PORTFOLIO_CORS_ALLOW_ORIGINS", "").split(",")
+        if item.strip()
+    )
+    return Settings(
+        dashboard_api_token=os.environ.get("PORTFOLIO_DASHBOARD_API_TOKEN") or None,
+        cors_allow_origins=cors_allow_origins,
+    )
