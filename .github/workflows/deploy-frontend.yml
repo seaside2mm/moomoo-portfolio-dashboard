@@ -38,6 +38,9 @@ jobs:
             --read-only "${{ vars.FRONTEND_READ_ONLY || 'true' }}" \
             --requires-write-token "${{ vars.FRONTEND_REQUIRES_WRITE_TOKEN || 'true' }}"
 
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
