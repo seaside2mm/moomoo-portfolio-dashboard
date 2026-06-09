@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>持仓看板</title>
+    <link rel="stylesheet" href="/static/styles.css?v=20260609-sync-fix1" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="hero">
+        <div class="hero-identity">
+          <div class="avatar" aria-hidden="true">M</div>
+          <div>
+            <div class="brandline">
+              <span class="status-dot"></span>
+              <strong>Money or Life</strong>
+              <span>美股频道</span>
+            </div>
+            <h1>持仓全景图</h1>
+            <p id="snapshotMeta" class="muted">暂无快照</p>
+          </div>
+        </div>
+        <div class="hero-actions">
+          <div class="actions">
+            <button id="syncButton" type="button">同步</button>
+            <button id="themeModalButton" type="button">主题</button>
+            <select id="snapshotSelect" aria-label="选择快照"></select>
+          </div>
+          <aside class="hero-score">
+            <span>收益率</span>
+            <strong id="heroScore">--%</strong>
+          </aside>
+        </div>
+      </header>
+
+      <section id="statusBanner" class="banner hidden"></section>
+
+      <section id="summary" class="summary-grid"></section>
+      <section id="formulaBar" class="formula-bar"></section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <h2>持仓地图</h2>
+          <span>方块数字 = 总资产占比</span>
+        </div>
+        <div id="treemap" class="treemap"></div>
+      </section>
+
+      <section class="two-column">
+        <section class="panel sector-panel">
+          <div class="sector-config">
+            <div class="panel-heading">
+              <h2>板块配置</h2>
+              <span>占总资产的比重</span>
+            </div>
+            <div id="sectorAllocation" class="sector-allocation"></div>
+          </div>
+          <div class="panel-heading">
+            <h2>板块明细</h2>
+          </div>
+          <div id="themes" class="theme-grid"></div>
+        </section>
+        <section class="panel">
+          <div class="panel-heading">
+            <h2>期权风险</h2>
+          </div>
+          <div id="options" class="option-list"></div>
+        </section>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <h2>资金与收益率曲线</h2>
+          <span>每日最后快照</span>
+        </div>
+        <div id="performance" class="performance-list"></div>
+      </section>
+    </div>
+
+    <dialog id="themeModal">
+      <form method="dialog" class="theme-modal">
+        <div class="theme-modal-header">
+          <h2>主题配置</h2>
+          <button type="submit">关闭</button>
+        </div>
+        <div class="theme-form">
+          <input id="themeSymbol" placeholder="Symbol" />
+          <input id="themeName" placeholder="Theme" />
+          <input id="themeDisplayName" placeholder="Display Name" />
+          <input id="themeColor" placeholder="#22d3ee" />
+          <button id="saveThemeButton" type="button">保存主题</button>
+        </div>
+        <div id="themeTable" class="theme-table"></div>
+      </form>
+    </dialog>
+
+    <script src="/static/dashboard.js?v=20260609-sync-fix1"></script>
+  </body>
+</html>
